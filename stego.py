@@ -1,3 +1,7 @@
+import cv2
+import numpy as np
+
+
 class stego():
     def __init__(self, original):
         # image and iterating values
@@ -11,8 +15,8 @@ class stego():
         
     # Update the masking values
     def updateMasks(self):
-        self.and_mask -= self.orval
-        self.orval = self.orval * 2
+        self.and_mask -= self.or_mask
+        self.or_mask = self.or_mask * 2
     
     # Get the binary version of 'val' with proper length
     def real_binary(self, val, ln):
@@ -40,12 +44,12 @@ class stego():
         return int(pxl) & self.and_mask
     
     def one_in(self, pxl):
-        return int(pxl) | self.orval
+        return int(pxl) | self.or_mask
 
     # Hide pased in bits to current register in image
     def hide_val(self, bits):
         for c in bits:
-            self.image[self.h,self.w][self.chan] = mask_update(self.image[self.h,self.w][self.chan], c)
+            self.image[self.h,self.w][self.chan] = self.mask_update(self.image[self.h,self.w][self.chan], c)
             self.iterate()
     
     # Determine whether or not to update current value type (channel, width, height)
@@ -69,7 +73,7 @@ class stego():
             return
         
         # End of registers
-        if self.orval == 128:
+        if self.or_mask == 128:
             raise Length("Input too large")
             
         self.updateMasks()
@@ -84,7 +88,7 @@ class stego():
 
     # Return only the next bit of current register
     def next_bit(self):
-        val = self.orval & self.image[self.h,self.w][self.chan]
+        val = self.or_mask & self.image[self.h,self.w][self.chan]
         self.iterate()
         if val == 0:
             return val
@@ -99,8 +103,51 @@ class stego():
     def next_bits(self, ln):
         bits = ""
         for i in range(ln):
-            bits += self.next_bit()
+            bits += str(self.next_bit())
         return bits
+    
+    
+    # Encode the image if fits- first specify dimensions, then add pixels
+    def encode_image(self, image):
+        width, height, channels = image.shape
+
+        bw = self.real_binary(width,16)
+        bh = self.real_binary(height,16)
+        
+        if width*height*channels > self.width*self.height*self.channels:
+            print("NO")
+            raise ImageSize("Image not large enough")        
+        
+        self.hide_val(bw)
+        self.hide_val(bh)
+        
+        for w in range(width):
+            for h in range(height):
+                for chan in range(channels):
+                    val = image[w,h][chan]
+                    self.hide_val(self.real_binary(int(val), 8))
+                    
+        return self.image
+
+    # Decode the image
+    def decode_image(self, path):
+        width = int(self.next_bits(16),2)
+        height = int(self.next_bits(16),2)
+        channels = self.channels
+        
+        recovered = np.zeros((width, height, channels), np.uint8)
+        
+        for w in range(width):
+            for h in range(height):
+                for chan in range(channels):
+                    recovered[w,h][chan] = int(self.next_char(),2)
+        return recovered
+
     
     class Length(Exception):
         pass
+    
+    class ImageSize(Exception):
+        pass
+
+    
