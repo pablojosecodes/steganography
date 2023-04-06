@@ -149,5 +149,3 @@ class stego():
     
     class ImageSize(Exception):
         pass
-
-    
