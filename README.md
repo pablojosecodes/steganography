@@ -4,6 +4,13 @@ Steganography is the practice of hiding secret information in a communication ch
 
 This is a tiny package I coded in a few hours which performs a basic form of steganography predicated on the idea of Least Significant Bit encoding.
 
+## Usage
+There are 2 ways to use this tool, although I sincerely doubt there is much practical application of steganography in *most* people's daily lives, outside of a fun party trick.
+
+The methods:
+1. I put together a package on PyPi, available here.
+2. Clone this repository and use the command line tool. Instructions for the flags and commands will be available at the bottom of this readme
+
 ## Least Signifant Bit Encoding
 
 To understand LSB encoding, we first must understand how images on digital screens work. 
